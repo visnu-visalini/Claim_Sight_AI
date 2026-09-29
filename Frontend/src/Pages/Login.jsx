@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -113,7 +115,7 @@ function Login() {
           <div className="login-footer">
             <p>
               Don't have an account?
-              <span className="signup-link"> Create Account</span>
+              <span className="signup-link" onClick={() => navigate("/signup")}> Create Account</span>
             </p>
           </div>
 
