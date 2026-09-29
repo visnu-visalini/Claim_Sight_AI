@@ -4,12 +4,39 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+   const handleLogin = async (e) => {
+  e.preventDefault();
 
-    console.log("Email:", email);
-    console.log("Password:", password);
-  };
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:5000/api/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data.success) {
+      alert("Login successful!");
+    } else {
+      alert(data.message);
+    }
+
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Unable to connect to server");
+  }
+};
 
   return (
     <div className="login-page">
