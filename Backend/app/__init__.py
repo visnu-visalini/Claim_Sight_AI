@@ -17,11 +17,18 @@ def create_app():
     db.init_app(app)
 
     from app.models.user import User
+    from app.models.claim import Claim
     from app.routes.auth import auth_bp
+    from app.routes.claims import claims_bp
 
     app.register_blueprint(
         auth_bp,
         url_prefix="/api/auth"
+    )
+
+    app.register_blueprint(
+        claims_bp,
+        url_prefix="/api/claims"
     )
 
     with app.app_context():
