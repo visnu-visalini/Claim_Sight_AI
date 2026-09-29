@@ -149,3 +149,110 @@ body {
     padding: 45px 30px;
   }
 }
+.dashboard-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.dashboard-header {
+  height: 80px;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+}
+
+.dashboard-header h1 {
+  font-size: 24px;
+  margin-bottom: 3px;
+}
+
+.dashboard-header p {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  border: 1px solid #64748b;
+  border-radius: 7px;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: #1e293b;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: auto;
+  padding: 50px 30px;
+}
+
+.welcome-section {
+  margin-bottom: 40px;
+}
+
+.welcome-section h2 {
+  font-size: 32px;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.welcome-section p {
+  color: #64748b;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+}
+
+.dashboard-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-card h3 {
+  font-size: 20px;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.dashboard-card p {
+  color: #64748b;
+  line-height: 1.6;
+  min-height: 75px;
+}
+
+.dashboard-card button {
+  margin-top: 20px;
+  padding: 11px 18px;
+  border: none;
+  border-radius: 7px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dashboard-card button:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 800px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header {
+    padding: 0 20px;
+  }
+}

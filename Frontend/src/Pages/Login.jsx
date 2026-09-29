@@ -27,10 +27,24 @@ function Login() {
     console.log(data);
 
     if (data.success) {
-      alert("Login successful!");
-    } else {
-      alert(data.message);
-    }
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify(data.user)
+  );
+
+  localStorage.setItem(
+    "isAuthenticated",
+    "true"
+  );
+
+  navigate("/dashboard");
+
+} else {
+
+  alert(data.message);
+
+}
 
   } catch (error) {
     console.error("Login error:", error);
