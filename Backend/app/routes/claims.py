@@ -27,7 +27,6 @@ def create_claim():
             "message": "User ID is required"
         }), 400
 
-    # Check whether the user exists
     user = User.query.get(user_id)
 
     if not user:
@@ -36,7 +35,6 @@ def create_claim():
             "message": "User not found"
         }), 404
 
-    # Create a new draft claim
     claim = Claim(
         user_id=user_id,
         status="draft"
@@ -54,8 +52,18 @@ def create_claim():
             "status": claim.status
         }
     }), 201
+
+
 @claims_bp.route("/<int:claim_id>", methods=["GET"])
 def get_claim(claim_id):
+
+    user_id = request.args.get("user_id", type=int)
+
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "message": "User ID is required"
+        }), 400
 
     claim = Claim.query.get(claim_id)
 
@@ -64,6 +72,12 @@ def get_claim(claim_id):
             "success": False,
             "message": "Claim not found"
         }), 404
+
+    if claim.user_id != user_id:
+        return jsonify({
+            "success": False,
+            "message": "You are not authorized to access this claim"
+        }), 403
 
     return jsonify({
         "success": True,
@@ -75,18 +89,42 @@ def get_claim(claim_id):
             "vehicle_make": claim.vehicle_make,
             "vehicle_model": claim.vehicle_model,
             "vehicle_year": claim.vehicle_year,
-            "accident_date": claim.accident_date.isoformat()
-            if claim.accident_date else None,
+            "accident_date": (
+                claim.accident_date.isoformat()
+                if claim.accident_date else None
+            ),
             "accident_location": claim.accident_location,
             "accident_description": claim.accident_description,
-            "created_at": claim.created_at.isoformat()
-            if claim.created_at else None,
-            "updated_at": claim.updated_at.isoformat()
-            if claim.updated_at else None
+            "created_at": (
+                claim.created_at.isoformat()
+                if claim.created_at else None
+            ),
+            "updated_at": (
+                claim.updated_at.isoformat()
+                if claim.updated_at else None
+            )
         }
     }), 200
+
+
 @claims_bp.route("/<int:claim_id>", methods=["PUT"])
 def update_claim(claim_id):
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "Request data is required"
+        }), 400
+
+    user_id = data.get("user_id")
+
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "message": "User ID is required"
+        }), 400
 
     claim = Claim.query.get(claim_id)
 
@@ -96,13 +134,11 @@ def update_claim(claim_id):
             "message": "Claim not found"
         }), 404
 
-    data = request.get_json()
-
-    if not data:
+    if claim.user_id != user_id:
         return jsonify({
             "success": False,
-            "message": "Request data is required"
-        }), 400
+            "message": "You are not authorized to update this claim"
+        }), 403
 
     # Vehicle information
     if "vehicle_number" in data:
@@ -156,8 +192,10 @@ def update_claim(claim_id):
             "vehicle_make": claim.vehicle_make,
             "vehicle_model": claim.vehicle_model,
             "vehicle_year": claim.vehicle_year,
-            "accident_date": claim.accident_date.isoformat()
-            if claim.accident_date else None,
+            "accident_date": (
+                claim.accident_date.isoformat()
+                if claim.accident_date else None
+            ),
             "accident_location": claim.accident_location,
             "accident_description": claim.accident_description
         }
