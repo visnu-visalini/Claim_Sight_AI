@@ -14,6 +14,52 @@ function Dashboard() {
     navigate("/login");
   };
 
+  const handleCreateClaim = async () => {
+    try {
+      if (!user?.id) {
+        alert("User information not found. Please login again.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/claims/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Failed to create claim");
+        return;
+      }
+
+      // Store the newly created claim
+      localStorage.setItem(
+        "currentClaim",
+        JSON.stringify(data.claim)
+      );
+
+      // Go to the new claim page
+      navigate("/claim/new");
+
+    } catch (error) {
+      console.error("Create claim error:", error);
+
+      alert(
+        "Unable to connect to the backend. Make sure Flask is running."
+      );
+    }
+  };
+
   return (
     <div className="dashboard-page">
 
@@ -59,9 +105,7 @@ function Dashboard() {
               with AI-powered damage assessment.
             </p>
 
-            <button
-              onClick={() => navigate("/claim/new")}
-            >
+            <button onClick={handleCreateClaim}>
               Create Claim
             </button>
 
