@@ -11,7 +11,9 @@ import ClaimGeneration from "./Pages/ClaimGeneration";
 import ClaimReview from "./Pages/ClaimReview";
 import MyClaims from "./Pages/MyClaims";
 import Profile from "./Pages/Profile";
+import AdminDashboard from "./Pages/AdminDashboard";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import AdminRoute from "./Components/AdminRoute";
 
 
 function App() {
@@ -125,6 +127,16 @@ function App() {
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
           }
         />
 
