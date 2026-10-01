@@ -18,3 +18,9 @@ class User(db.Model):
         db.String(255),
         nullable=False
     )
+
+    role = db.Column(
+        db.String(20),
+        nullable=False,
+        default="user"
+    )

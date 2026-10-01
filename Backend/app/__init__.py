@@ -48,4 +48,14 @@ def create_app():
         except Exception:
             pass  # Column already exists — safe to ignore
 
+        # Safe migration: add role column to users if it does not exist yet
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(
+                    db.text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'")
+                )
+                conn.commit()
+        except Exception:
+            pass  # Column already exists — safe to ignore
+
     return app
