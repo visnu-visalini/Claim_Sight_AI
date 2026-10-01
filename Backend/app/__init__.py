@@ -18,20 +18,34 @@ def create_app():
 
     from app.models.user import User
     from app.models.claim import Claim
+    from app.models.claim_image import ClaimImage
     from app.routes.auth import auth_bp
     from app.routes.claims import claims_bp
+    from app.routes.images import images_bp
+    from app.routes.cost import cost_bp
+    from app.routes.generate import generate_bp
+    from app.routes.review import review_bp
+    from app.routes.profile import profile_bp
 
-    app.register_blueprint(
-        auth_bp,
-        url_prefix="/api/auth"
-    )
-
-    app.register_blueprint(
-        claims_bp,
-        url_prefix="/api/claims"
-    )
+    app.register_blueprint(auth_bp,    url_prefix="/api/auth")
+    app.register_blueprint(claims_bp,  url_prefix="/api/claims")
+    app.register_blueprint(images_bp,  url_prefix="/api/claims")
+    app.register_blueprint(cost_bp,    url_prefix="/api/claims")
+    app.register_blueprint(generate_bp, url_prefix="/api/claims")
+    app.register_blueprint(review_bp,  url_prefix="/api/claims")
+    app.register_blueprint(profile_bp, url_prefix="/api/profile")
 
     with app.app_context():
         db.create_all()
+
+        # Safe migration: add submitted_at column if it does not exist yet
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(
+                    db.text("ALTER TABLE claims ADD COLUMN submitted_at DATETIME")
+                )
+                conn.commit()
+        except Exception:
+            pass  # Column already exists — safe to ignore
 
     return app

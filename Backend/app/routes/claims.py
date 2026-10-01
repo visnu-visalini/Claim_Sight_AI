@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify
 
 from app import db
 from app.models.claim import Claim
+from app.models.claim_image import ClaimImage
 from app.models.user import User
+from app.cost_estimation import estimate_claim
 
 
 claims_bp = Blueprint("claims", __name__)
@@ -199,4 +201,80 @@ def update_claim(claim_id):
             "accident_location": claim.accident_location,
             "accident_description": claim.accident_description
         }
+    }), 200
+
+
+@claims_bp.route("/my", methods=["GET"])
+def get_my_claims():
+
+    user_id = request.args.get("user_id", type=int)
+
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "message": "user_id is required"
+        }), 400
+
+    claims = (
+        Claim.query
+        .filter_by(user_id=user_id)
+        .order_by(Claim.created_at.desc())
+        .all()
+    )
+
+    result = []
+
+    for claim in claims:
+
+        images = ClaimImage.query.filter_by(claim_id=claim.id).all()
+
+        # Reuse existing cost estimation logic
+        cost = estimate_claim(images)
+
+        # Collect unique damage types from damaged images
+        damage_types = list({
+            img.damage_type
+            for img in images
+            if img.damage_detected and img.damage_type
+        })
+
+        result.append({
+            "claim_id": claim.id,
+            "status": claim.status,
+            "created_at": (
+                claim.created_at.isoformat()
+                if claim.created_at else None
+            ),
+            "submitted_at": (
+                claim.submitted_at.isoformat()
+                if claim.submitted_at else None
+            ),
+            "vehicle": {
+                "vehicle_number": claim.vehicle_number,
+                "make": claim.vehicle_make,
+                "model": claim.vehicle_model,
+                "year": claim.vehicle_year,
+            },
+            "accident": {
+                "date": (
+                    claim.accident_date.isoformat()
+                    if claim.accident_date else None
+                ),
+                "location": claim.accident_location,
+            },
+            "damage": {
+                "has_damage": cost["has_damage"],
+                "damage_types": damage_types,
+                "image_count": len(images),
+            },
+            "cost_estimate": {
+                "min": cost["total_estimated_min"],
+                "max": cost["total_estimated_max"],
+                "average": cost["total_estimated_average"],
+            },
+        })
+
+    return jsonify({
+        "success": True,
+        "claims": result
     }), 200

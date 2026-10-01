@@ -30,6 +30,7 @@ class Claim(db.Model):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+    submitted_at = db.Column(db.DateTime, nullable=True)
 
     def __repr__(self):
         return f"<Claim {self.id}>"
