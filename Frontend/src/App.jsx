@@ -10,6 +10,7 @@ import CostEstimation from "./Pages/CostEstimation";
 import ClaimGeneration from "./Pages/ClaimGeneration";
 import ClaimReview from "./Pages/ClaimReview";
 import MyClaims from "./Pages/MyClaims";
+import Profile from "./Pages/Profile";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
 
@@ -122,10 +123,7 @@ function App() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <div>
-                <h1>Profile</h1>
-                <p>Profile page is working.</p>
-              </div>
+              <Profile />
             </ProtectedRoute>
           }
         />

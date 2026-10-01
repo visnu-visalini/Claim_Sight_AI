@@ -40,7 +40,7 @@ function Login() {
     "true"
   );
 
-  navigate("/dashboard");
+  navigate(data.user.role === "admin" ? "/admin/dashboard" : "/dashboard");
 
 } else {
 
