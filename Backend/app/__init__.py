@@ -26,6 +26,8 @@ def create_app():
     from app.routes.generate import generate_bp
     from app.routes.review import review_bp
     from app.routes.profile import profile_bp
+    from app.routes.admin import admin_bp
+    from app.routes.report import report_bp
 
     app.register_blueprint(auth_bp,    url_prefix="/api/auth")
     app.register_blueprint(claims_bp,  url_prefix="/api/claims")
@@ -34,6 +36,8 @@ def create_app():
     app.register_blueprint(generate_bp, url_prefix="/api/claims")
     app.register_blueprint(review_bp,  url_prefix="/api/claims")
     app.register_blueprint(profile_bp, url_prefix="/api/profile")
+    app.register_blueprint(admin_bp,   url_prefix="/api/admin")
+    app.register_blueprint(report_bp,  url_prefix="/api/claims")
 
     with app.app_context():
         db.create_all()
