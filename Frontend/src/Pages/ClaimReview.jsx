@@ -18,6 +18,37 @@ function ClaimReview() {
 
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [downloading, setDownloading]     = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    setDownloadError("");
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:5000/api/claims/${claimId}/report?user_id=${user.id}`
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setDownloadError(err.message || "Failed to generate report.");
+        return;
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `ClaimSightAI_${claimId}_Report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setDownloadError("Unable to connect to server. Make sure Flask is running.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchReview = async () => {
       try {
@@ -345,6 +376,11 @@ function ClaimReview() {
               <p className="error-message">{submitError}</p>
             )}
 
+            {/* ── Download error ── */}
+            {downloadError && (
+              <p className="error-message">{downloadError}</p>
+            )}
+
             {/* ── Confirmation dialog ── */}
             {showConfirm && (
               <div className="review-confirm-overlay">
@@ -381,6 +417,14 @@ function ClaimReview() {
                 disabled={submitting}
               >
                 ← Back to Claim Generation
+              </button>
+
+              <button
+                className="cost-back-button"
+                onClick={handleDownload}
+                disabled={downloading}
+              >
+                {downloading ? "Generating PDF…" : "⬇ Download Report"}
               </button>
 
               {!submitted ? (

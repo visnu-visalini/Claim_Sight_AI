@@ -35,6 +35,8 @@ function AdminDashboard() {
   const [pendingStatus, setPendingStatus] = useState({});
   const [updating, setUpdating]         = useState({});
   const [updateMsg, setUpdateMsg]       = useState({});
+  const [downloading, setDownloading]   = useState({});
+  const [downloadErr, setDownloadErr]   = useState({});
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -141,6 +143,36 @@ function AdminDashboard() {
       setUpdateMsg((p) => ({ ...p, [claimId]: "Connection error." }));
     } finally {
       setUpdating((p) => ({ ...p, [claimId]: false }));
+    }
+  };
+
+  // ── PDF download ──────────────────────────────────────────────────────────
+
+  const handleDownload = async (claimId) => {
+    setDownloading((p) => ({ ...p, [claimId]: true }));
+    setDownloadErr((p) => ({ ...p, [claimId]: "" }));
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:5000/api/claims/${claimId}/report?user_id=${admin.id}`
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setDownloadErr((p) => ({ ...p, [claimId]: err.message || "Failed to generate report." }));
+        return;
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `ClaimSightAI_${claimId}_Report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setDownloadErr((p) => ({ ...p, [claimId]: "Unable to connect to server." }));
+    } finally {
+      setDownloading((p) => ({ ...p, [claimId]: false }));
     }
   };
 
@@ -435,6 +467,21 @@ function AdminDashboard() {
                             <Field label="Name"    value={claim.claimant.name} />
                             <Field label="Email"   value={claim.claimant.email} />
                           </div>
+                        </div>
+
+                        <div style={{ marginTop: "14px" }}>
+                          <button
+                            className="admin-expand-btn"
+                            disabled={!!downloading[claim.claim_id]}
+                            onClick={() => handleDownload(claim.claim_id)}
+                          >
+                            {downloading[claim.claim_id] ? "Generating PDF…" : "⬇ Download Report"}
+                          </button>
+                          {downloadErr[claim.claim_id] && (
+                            <p className="error-message" style={{ marginTop: "8px" }}>
+                              {downloadErr[claim.claim_id]}
+                            </p>
+                          )}
                         </div>
 
                       </div>
