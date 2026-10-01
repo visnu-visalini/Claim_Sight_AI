@@ -311,6 +311,71 @@ function ClaimReview() {
                           </tbody>
                         </table>
                       )}
+
+                      {/* OpenAI second opinion */}
+                      {item.openai_available && (
+                        <div className="openai-panel" style={{ marginTop: "14px" }}>
+                          <div className="openai-panel-header">
+                            <span className="openai-label">GPT-4o Vision — Second Opinion</span>
+                            {item.openai_agrees_with_yolo === true && (
+                              <span className="openai-agree">✓ Agrees with YOLO</span>
+                            )}
+                            {item.openai_agrees_with_yolo === false && (
+                              <span className="openai-disagree">✗ Disagrees with YOLO</span>
+                            )}
+                          </div>
+                          <table className="result-table" style={{ marginTop: "8px" }}>
+                            <tbody>
+                              <tr>
+                                <td>Damage Present</td>
+                                <td>{item.openai_damage_present ? "Yes" : "No"}</td>
+                              </tr>
+                              {item.openai_damage_present && (
+                                <>
+                                  <tr>
+                                    <td>Damage Type</td>
+                                    <td>{item.openai_damage_type || "—"}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Affected Part</td>
+                                    <td>{item.openai_affected_part || "—"}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Severity</td>
+                                    <td>
+                                      <span className={`openai-severity openai-severity-${(item.openai_severity || "").toLowerCase()}`}>
+                                        {item.openai_severity || "—"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>Confidence</td>
+                                    <td>
+                                      {item.openai_confidence != null
+                                        ? `${(item.openai_confidence * 100).toFixed(1)}%`
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                </>
+                              )}
+                              {item.openai_assessment && (
+                                <tr>
+                                  <td>Assessment</td>
+                                  <td style={{ fontStyle: "italic", color: "#475569" }}>
+                                    {item.openai_assessment}
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {item.openai_available === false && (
+                        <div className="openai-panel openai-unavailable" style={{ marginTop: "14px" }}>
+                          <span className="openai-label">GPT-4o Vision</span>
+                          <span className="openai-na">Unavailable</span>
+                        </div>
+                      )}
                     </div>
 
                   </div>
