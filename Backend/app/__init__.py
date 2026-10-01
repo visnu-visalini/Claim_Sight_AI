@@ -1,6 +1,10 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # loads Backend/.env into os.environ before anything else
 
 db = SQLAlchemy()
 
@@ -61,5 +65,24 @@ def create_app():
                 conn.commit()
         except Exception:
             pass  # Column already exists — safe to ignore
+
+        # Safe migrations: add OpenAI second-opinion columns to claim_images
+        _openai_migrations = [
+            "ALTER TABLE claim_images ADD COLUMN openai_available BOOLEAN DEFAULT 0",
+            "ALTER TABLE claim_images ADD COLUMN openai_damage_present BOOLEAN",
+            "ALTER TABLE claim_images ADD COLUMN openai_damage_type VARCHAR(100)",
+            "ALTER TABLE claim_images ADD COLUMN openai_severity VARCHAR(50)",
+            "ALTER TABLE claim_images ADD COLUMN openai_affected_part VARCHAR(100)",
+            "ALTER TABLE claim_images ADD COLUMN openai_assessment TEXT",
+            "ALTER TABLE claim_images ADD COLUMN openai_confidence FLOAT",
+            "ALTER TABLE claim_images ADD COLUMN openai_agrees_with_yolo BOOLEAN",
+        ]
+        for _sql in _openai_migrations:
+            try:
+                with db.engine.connect() as conn:
+                    conn.execute(db.text(_sql))
+                    conn.commit()
+            except Exception:
+                pass  # Column already exists — safe to ignore
 
     return app

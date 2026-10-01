@@ -10,6 +10,9 @@ __pycache__/
 build/
 dist/
 
+# Environment / secrets
+.env
+
 # Node / JS
 node_modules/
 

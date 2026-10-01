@@ -1,5 +1,6 @@
 import os
 import uuid
+import json
 
 from flask import Blueprint, request, jsonify, current_app, send_file
 from werkzeug.utils import secure_filename
@@ -8,6 +9,7 @@ from app import db
 from app.models.claim import Claim
 from app.models.claim_image import ClaimImage
 from app.ai_damage import detect_damage
+from app.ai_openai import analyze_damage_with_openai
 
 
 images_bp = Blueprint("images", __name__)
@@ -126,6 +128,9 @@ def upload_images(claim_id):
                 "error": str(e)
             }), 500
 
+        # OpenAI Vision second opinion (non-blocking — failures return safe fallback)
+        openai_result = analyze_damage_with_openai(file_path, detections)
+
         # Default values when no damage is detected
         damage_detected = len(detections) > 0
         damage_type = None
@@ -141,9 +146,7 @@ def upload_images(claim_id):
 
             damage_type = best_detection["damage_type"]
             confidence = best_detection["confidence"]
-            bounding_box = str(
-                best_detection["bounding_box"]
-            )
+            bounding_box = json.dumps(best_detection["bounding_box"])
 
         # Save image + AI result to database
         image_record = ClaimImage(
@@ -153,7 +156,16 @@ def upload_images(claim_id):
             damage_detected=damage_detected,
             damage_type=damage_type,
             confidence=confidence,
-            bounding_box=bounding_box
+            bounding_box=bounding_box,
+            # OpenAI second-opinion fields
+            openai_available=openai_result.get("available", False),
+            openai_damage_present=openai_result.get("damage_present"),
+            openai_damage_type=openai_result.get("damage_type"),
+            openai_severity=openai_result.get("severity"),
+            openai_affected_part=openai_result.get("affected_part"),
+            openai_assessment=openai_result.get("visual_assessment"),
+            openai_confidence=openai_result.get("confidence"),
+            openai_agrees_with_yolo=openai_result.get("agrees_with_yolo"),
         )
 
         db.session.add(image_record)
@@ -167,7 +179,15 @@ def upload_images(claim_id):
             "damage_detected": damage_detected,
             "damage_type": damage_type,
             "confidence": confidence,
-            "bounding_box": bounding_box
+            "bounding_box": bounding_box,
+            "openai_available":        image_record.openai_available,
+            "openai_damage_present":    image_record.openai_damage_present,
+            "openai_damage_type":       image_record.openai_damage_type,
+            "openai_severity":          image_record.openai_severity,
+            "openai_affected_part":     image_record.openai_affected_part,
+            "openai_assessment":        image_record.openai_assessment,
+            "openai_confidence":        image_record.openai_confidence,
+            "openai_agrees_with_yolo":  image_record.openai_agrees_with_yolo,
         })
 
     db.session.commit()
@@ -220,7 +240,15 @@ def get_images(claim_id):
                 "uploaded_at": (
                     img.uploaded_at.isoformat()
                     if img.uploaded_at else None
-                )
+                ),
+                "openai_available":        img.openai_available,
+                "openai_damage_present":    img.openai_damage_present,
+                "openai_damage_type":       img.openai_damage_type,
+                "openai_severity":          img.openai_severity,
+                "openai_affected_part":     img.openai_affected_part,
+                "openai_assessment":        img.openai_assessment,
+                "openai_confidence":        img.openai_confidence,
+                "openai_agrees_with_yolo":  img.openai_agrees_with_yolo,
             }
             for img in images
         ]

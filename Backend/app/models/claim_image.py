@@ -19,5 +19,15 @@ class ClaimImage(db.Model):
 
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # OpenAI Vision second-opinion results (all nullable — existing rows unaffected)
+    openai_available        = db.Column(db.Boolean,     nullable=True, default=False)
+    openai_damage_present   = db.Column(db.Boolean,     nullable=True)
+    openai_damage_type      = db.Column(db.String(100), nullable=True)
+    openai_severity         = db.Column(db.String(50),  nullable=True)
+    openai_affected_part    = db.Column(db.String(100), nullable=True)
+    openai_assessment       = db.Column(db.Text,        nullable=True)
+    openai_confidence       = db.Column(db.Float,       nullable=True)
+    openai_agrees_with_yolo = db.Column(db.Boolean,     nullable=True)
+
     def __repr__(self):
         return f"<ClaimImage {self.id} claim={self.claim_id}>"

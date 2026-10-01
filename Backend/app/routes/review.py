@@ -50,6 +50,14 @@ def _assemble_claim_data(claim, images, cost):
                 f"http://127.0.0.1:5000/api/claims/{claim.id}"
                 f"/images/{img.id}/file"
             ),
+            "openai_available":       img.openai_available,
+            "openai_damage_present":  img.openai_damage_present,
+            "openai_damage_type":     img.openai_damage_type,
+            "openai_severity":        img.openai_severity,
+            "openai_affected_part":   img.openai_affected_part,
+            "openai_assessment":      img.openai_assessment,
+            "openai_confidence":      img.openai_confidence,
+            "openai_agrees_with_yolo": img.openai_agrees_with_yolo,
         })
 
     return {
