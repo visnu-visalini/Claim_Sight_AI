@@ -294,7 +294,9 @@ function ClaimReview() {
                       </div>
 
                       {item.damage_detected && (
-                        <table className="result-table" style={{ marginTop: "12px" }}>
+                        <>
+                        <div className="yolo-source-label">YOLO Detection — Primary</div>
+                        <table className="result-table" style={{ marginTop: "4px" }}>
                           <tbody>
                             <tr>
                               <td>Damage Type</td>
@@ -310,6 +312,7 @@ function ClaimReview() {
                             </tr>
                           </tbody>
                         </table>
+                        </>
                       )}
 
                       {/* OpenAI second opinion */}
@@ -317,12 +320,17 @@ function ClaimReview() {
                         <div className="openai-panel" style={{ marginTop: "14px" }}>
                           <div className="openai-panel-header">
                             <span className="openai-label">GPT-4o Vision — Second Opinion</span>
-                            {item.openai_agrees_with_yolo === true && (
-                              <span className="openai-agree">✓ Agrees with YOLO</span>
-                            )}
-                            {item.openai_agrees_with_yolo === false && (
-                              <span className="openai-disagree">✗ Disagrees with YOLO</span>
-                            )}
+                            {(() => {
+                              const state = item.openai_agreement_state
+                                ?? (item.openai_agrees_with_yolo === true ? "agreement"
+                                  : item.openai_agrees_with_yolo === false ? "disagreement"
+                                  : null);
+                              if (state === "agreement")          return <span className="openai-agree">✓ Agrees with YOLO</span>;
+                              if (state === "partial_agreement")  return <span className="openai-partial">~ Partial Agreement</span>;
+                              if (state === "disagreement")       return <span className="openai-disagree">✗ Disagrees with YOLO</span>;
+                              if (state === "openai_unavailable") return <span className="openai-na">OpenAI Unavailable</span>;
+                              return null;
+                            })()}
                           </div>
                           <table className="result-table" style={{ marginTop: "8px" }}>
                             <tbody>
@@ -411,6 +419,19 @@ function ClaimReview() {
                       </tr>
                     </tbody>
                   </table>
+
+                  {claim.cost_estimation.openai_adjustment_applied && (
+                    <div className="cost-openai-note" style={{ marginTop: "12px" }}>
+                      <span className="openai-label" style={{ marginRight: "6px" }}>AI Adjustment:</span>
+                      OpenAI second opinion applied a controlled adjustment factor of{" "}
+                      {claim.cost_estimation.openai_adjustment_factor != null
+                        ? claim.cost_estimation.openai_adjustment_factor.toFixed(2)
+                        : ""}.
+                      {claim.cost_estimation.openai_adjustment_reason && (
+                        <> {claim.cost_estimation.openai_adjustment_reason}</>
+                      )}
+                    </div>
+                  )}
 
                   {claim.cost_estimation.has_unknown_damage && (
                     <div className="cost-unknown-note" style={{ marginTop: "12px" }}>
