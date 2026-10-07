@@ -38,8 +38,12 @@ def _ownership_checks(claim_id, user_id):
 
 def _assemble_claim_data(claim, images, cost):
     """Build the full claim dict shared by both review and generate."""
+    # Build a lookup of combined assessment fields from cost damage_items
+    cost_by_image = {item["image_id"]: item for item in cost.get("damage_items", [])}
+
     damage_items = []
     for img in images:
+        cost_item = cost_by_image.get(img.id, {})
         damage_items.append({
             "image_id": img.id,
             "filename": img.filename,
@@ -65,6 +69,12 @@ def _assemble_claim_data(claim, images, cost):
                 img.openai_agrees_with_yolo,
                 img.openai_damage_type,
             ),
+            # 50/50 combined assessment fields (from cost engine)
+            "combined_damage_type": cost_item.get("combined_damage_type"),
+            "combined_confidence":  cost_item.get("combined_confidence"),
+            "yolo_weight":          cost_item.get("yolo_weight"),
+            "openai_weight":        cost_item.get("openai_weight"),
+            "combination_note":     cost_item.get("combination_note"),
         })
 
     return {
@@ -102,6 +112,9 @@ def _assemble_claim_data(claim, images, cost):
             "average": cost["total_estimated_average"],
             "has_unknown_damage": cost["has_unknown_damage"],
             "estimation_method": cost["estimation_method"],
+            "openai_adjustment_applied": cost.get("openai_adjustment_applied"),
+            "openai_adjustment_factor":  cost.get("openai_adjustment_factor"),
+            "openai_adjustment_reason":  cost.get("openai_adjustment_reason"),
         },
         "summary": build_summary(claim, images, cost),
     }

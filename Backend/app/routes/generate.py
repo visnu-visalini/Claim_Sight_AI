@@ -12,6 +12,10 @@ def build_summary(claim, images, cost):
     """
     Build a deterministic human-readable claim summary from existing data.
     Does NOT use any AI/LLM — purely template-based.
+
+    Uses cost["damage_items"] as the source of truth for detected damages
+    so the summary reflects the combined 50/50 YOLO + OpenAI assessment
+    rather than raw YOLO-only fields.
     """
 
     # Vehicle line
@@ -26,10 +30,12 @@ def build_summary(claim, images, cost):
     acc_date     = claim.accident_date.isoformat() if claim.accident_date else "an unknown date"
     acc_location = claim.accident_location or "an unknown location"
 
-    # Damage line
-    damaged_images = [img for img in images if img.damage_detected]
+    # Use cost["damage_items"] as the source of truth.
+    # This reflects the combined 50/50 assessment and includes any image
+    # where OpenAI found damage even if YOLO did not.
+    cost_damage_items = cost.get("damage_items", [])
 
-    if not damaged_images:
+    if not cost_damage_items:
         damage_line = (
             "No damage was detected in the submitted vehicle images "
             "by the AI damage detection system."
@@ -37,26 +43,28 @@ def build_summary(claim, images, cost):
         cost_line = "No repair cost estimate is applicable."
     else:
         damage_descriptions = []
-        for img in damaged_images:
-            dtype = img.damage_type or "unknown damage"
-            conf  = img.confidence
+        for item in cost_damage_items:
+            dtype = item.get("combined_damage_type") or item.get("damage_type") or "unknown damage"
+            conf  = item.get("combined_confidence")
             if conf is not None:
                 damage_descriptions.append(
-                    f"{dtype} with {round(conf * 100)}% confidence"
+                    f"{dtype} with {round(conf * 100)}% combined confidence"
                 )
             else:
                 damage_descriptions.append(dtype)
 
         if len(damage_descriptions) == 1:
             damage_line = (
-                "The submitted vehicle images were analyzed using the AI damage "
-                f"detection system. The detected damage includes {damage_descriptions[0]}."
+                "The submitted vehicle images were analyzed using the combined "
+                "AI damage detection system (YOLO + OpenAI Vision, 50/50 weighting). "
+                f"The detected damage includes {damage_descriptions[0]}."
             )
         else:
             joined = ", ".join(damage_descriptions[:-1]) + f", and {damage_descriptions[-1]}"
             damage_line = (
-                "The submitted vehicle images were analyzed using the AI damage "
-                f"detection system. The detected damages include {joined}."
+                "The submitted vehicle images were analyzed using the combined "
+                "AI damage detection system (YOLO + OpenAI Vision, 50/50 weighting). "
+                f"The detected damages include {joined}."
             )
 
         # Cost line
@@ -65,8 +73,8 @@ def build_summary(claim, images, cost):
             max_cost = cost["total_estimated_max"]
             avg_cost = cost["total_estimated_average"]
             cost_line = (
-                f"The estimated repair cost is ₹{min_cost:,} to ₹{max_cost:,}, "
-                f"with an estimated average of ₹{avg_cost:,}."
+                f"The estimated repair cost is between {min_cost:,} and {max_cost:,}, "
+                f"with an estimated average of {avg_cost:,} (amounts in INR)."
             )
         else:
             cost_line = (

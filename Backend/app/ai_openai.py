@@ -134,7 +134,8 @@ def _build_yolo_context(yolo_detections: list) -> str:
 
 # Mirrors LABEL_ALIASES in cost_estimation.py — keep in sync if new aliases are added there.
 _DAMAGE_LABEL_ALIASES = {
-    "tire_flat": "flat tire",
+    "tire_flat":    "flat tire",
+    "lamp_broken":  "broken lamp",
 }
 
 
@@ -146,6 +147,10 @@ def _normalize_damage_label(label) -> str:
     return _DAMAGE_LABEL_ALIASES.get(key, key)
 
 
+# Damage types that carry no usable information for agreement comparison.
+_UNUSABLE_TYPES = {"", "none", "unknown"}
+
+
 def get_agreement_state(
     yolo_damage_type,
     openai_available,
@@ -155,24 +160,39 @@ def get_agreement_state(
     """
     Derive a four-state agreement label from stored ClaimImage fields.
 
+    The normalised damage types are the PRIMARY source of truth.
+    openai_agrees_with_yolo (the boolean OpenAI self-reports) is used only
+    as a tiebreaker when both types are unusable/missing — it is never
+    trusted blindly when the actual types differ.
+
     Returns one of:
         "openai_unavailable"  — OpenAI was not available for this image
-        "agreement"           — OpenAI broadly agrees with YOLO
-        "partial_agreement"   — OpenAI disagrees but damage types match after normalisation
-        "disagreement"        — OpenAI disagrees and damage types do not match
+        "agreement"           — normalised types match (or boolean confirms when
+                                both types are missing)
+        "partial_agreement"   — types differ but boolean says agrees (soft match)
+        "disagreement"        — types differ and boolean does not confirm
     """
     if not openai_available:
         return "openai_unavailable"
 
-    if openai_agrees_with_yolo:
-        return "agreement"
-
-    # OpenAI available but self-reported disagreement — check damage types
-    yolo_norm  = _normalize_damage_label(yolo_damage_type)
+    yolo_norm   = _normalize_damage_label(yolo_damage_type)
     openai_norm = _normalize_damage_label(openai_damage_type)
 
-    if yolo_norm and openai_norm and yolo_norm == openai_norm:
-        return "partial_agreement"
+    yolo_usable   = yolo_norm   not in _UNUSABLE_TYPES
+    openai_usable = openai_norm not in _UNUSABLE_TYPES
+
+    # Both types are present and comparable — type comparison is authoritative.
+    if yolo_usable and openai_usable:
+        if yolo_norm == openai_norm:
+            return "agreement"
+        # Types differ. Boolean says agrees → soft/partial match only.
+        if openai_agrees_with_yolo:
+            return "partial_agreement"
+        return "disagreement"
+
+    # At least one type is missing/unusable — fall back to the boolean.
+    if openai_agrees_with_yolo:
+        return "agreement"
 
     return "disagreement"
 
