@@ -132,6 +132,51 @@ def _build_yolo_context(yolo_detections: list) -> str:
     return "\n".join(lines)
 
 
+# Mirrors LABEL_ALIASES in cost_estimation.py — keep in sync if new aliases are added there.
+_DAMAGE_LABEL_ALIASES = {
+    "tire_flat": "flat tire",
+}
+
+
+def _normalize_damage_label(label) -> str:
+    """Lowercase, strip, and apply label aliases for comparison purposes only."""
+    if not label:
+        return ""
+    key = label.strip().lower()
+    return _DAMAGE_LABEL_ALIASES.get(key, key)
+
+
+def get_agreement_state(
+    yolo_damage_type,
+    openai_available,
+    openai_agrees_with_yolo,
+    openai_damage_type,
+) -> str:
+    """
+    Derive a four-state agreement label from stored ClaimImage fields.
+
+    Returns one of:
+        "openai_unavailable"  — OpenAI was not available for this image
+        "agreement"           — OpenAI broadly agrees with YOLO
+        "partial_agreement"   — OpenAI disagrees but damage types match after normalisation
+        "disagreement"        — OpenAI disagrees and damage types do not match
+    """
+    if not openai_available:
+        return "openai_unavailable"
+
+    if openai_agrees_with_yolo:
+        return "agreement"
+
+    # OpenAI available but self-reported disagreement — check damage types
+    yolo_norm  = _normalize_damage_label(yolo_damage_type)
+    openai_norm = _normalize_damage_label(openai_damage_type)
+
+    if yolo_norm and openai_norm and yolo_norm == openai_norm:
+        return "partial_agreement"
+
+    return "disagreement"
+
+
 def _clamp_confidence(value) -> float:
     """Ensure confidence is a float in [0.0, 1.0]."""
     try:

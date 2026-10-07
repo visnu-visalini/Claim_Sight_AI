@@ -9,7 +9,7 @@ from app import db
 from app.models.claim import Claim
 from app.models.claim_image import ClaimImage
 from app.ai_damage import detect_damage
-from app.ai_openai import analyze_damage_with_openai
+from app.ai_openai import analyze_damage_with_openai, get_agreement_state
 
 
 images_bp = Blueprint("images", __name__)
@@ -188,6 +188,12 @@ def upload_images(claim_id):
             "openai_assessment":        image_record.openai_assessment,
             "openai_confidence":        image_record.openai_confidence,
             "openai_agrees_with_yolo":  image_record.openai_agrees_with_yolo,
+            "openai_agreement_state":   get_agreement_state(
+                image_record.damage_type,
+                image_record.openai_available,
+                image_record.openai_agrees_with_yolo,
+                image_record.openai_damage_type,
+            ),
         })
 
     db.session.commit()
@@ -249,6 +255,12 @@ def get_images(claim_id):
                 "openai_assessment":        img.openai_assessment,
                 "openai_confidence":        img.openai_confidence,
                 "openai_agrees_with_yolo":  img.openai_agrees_with_yolo,
+                "openai_agreement_state":   get_agreement_state(
+                    img.damage_type,
+                    img.openai_available,
+                    img.openai_agrees_with_yolo,
+                    img.openai_damage_type,
+                ),
             }
             for img in images
         ]

@@ -8,6 +8,12 @@ SEVERITY_MODIFIERS = {
     "severe":   1.20,
 }
 
+# Maps YOLO label variants to the canonical COST_TABLE key.
+# Add new aliases here if YOLO introduces more label format differences.
+LABEL_ALIASES = {
+    "tire_flat": "flat tire",
+}
+
 COST_TABLE = {
     "dent":          {"min": 3000,  "max": 8000},
     "scratch":       {"min": 2000,  "max": 6000},
@@ -38,6 +44,7 @@ def estimate_single(damage_type, confidence):
         return None
 
     key = damage_type.strip().lower()
+    key = LABEL_ALIASES.get(key, key)   # normalize YOLO label → COST_TABLE key
     entry = COST_TABLE.get(key)
 
     if entry is None:

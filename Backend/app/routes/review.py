@@ -6,6 +6,7 @@ from app.models.claim import Claim
 from app.models.claim_image import ClaimImage
 from app.cost_estimation import estimate_claim
 from app.routes.generate import build_summary
+from app.ai_openai import get_agreement_state
 
 
 review_bp = Blueprint("review", __name__)
@@ -58,6 +59,12 @@ def _assemble_claim_data(claim, images, cost):
             "openai_assessment":      img.openai_assessment,
             "openai_confidence":      img.openai_confidence,
             "openai_agrees_with_yolo": img.openai_agrees_with_yolo,
+            "openai_agreement_state":  get_agreement_state(
+                img.damage_type,
+                img.openai_available,
+                img.openai_agrees_with_yolo,
+                img.openai_damage_type,
+            ),
         })
 
     return {
