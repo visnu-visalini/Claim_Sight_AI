@@ -98,6 +98,9 @@ function DamageResults() {
 
                 <div className="result-details">
 
+                  {img.vehicle_view && (
+                    <p className="view-tag">{img.vehicle_view.charAt(0).toUpperCase() + img.vehicle_view.slice(1)} View</p>
+                  )}
                   <p className="result-filename">{img.filename}</p>
 
                   <div className={`damage-badge ${img.damage_detected ? "badge-damage" : "badge-no-damage"}`}>

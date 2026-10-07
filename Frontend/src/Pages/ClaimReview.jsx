@@ -287,6 +287,9 @@ function ClaimReview() {
                     </div>
 
                     <div className="gen-damage-card-right">
+                      {item.vehicle_view && (
+                        <p className="view-tag">{item.vehicle_view.charAt(0).toUpperCase() + item.vehicle_view.slice(1)} View</p>
+                      )}
                       <p className="result-filename">{item.filename}</p>
 
                       <div className={`damage-badge ${item.damage_detected ? "badge-damage" : "badge-no-damage"}`}>

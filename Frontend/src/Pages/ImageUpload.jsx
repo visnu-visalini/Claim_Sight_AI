@@ -1,42 +1,60 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+// View definitions — order controls display order
+const VIEWS = [
+  { key: "front", label: "Front View",  required: true  },
+  { key: "back",  label: "Back View",   required: true  },
+  { key: "left",  label: "Left View",   required: true  },
+  { key: "right", label: "Right View",  required: true  },
+  { key: "top",   label: "Top View",    required: false },
+];
+
+const EMPTY_SLOTS = Object.fromEntries(VIEWS.map((v) => [v.key, null]));
+
 function ImageUpload() {
   const { claimId } = useParams();
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  // Each slot: null | { file: File, preview: string }
+  const [slots, setSlots]     = useState(EMPTY_SLOTS);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
+  const handleFileChange = (viewKey, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    const withPreviews = newFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      id: `${file.name}-${Date.now()}-${Math.random()}`,
-    }));
+    // Revoke previous preview URL if one exists
+    setSlots((prev) => {
+      if (prev[viewKey]) URL.revokeObjectURL(prev[viewKey].preview);
+      return {
+        ...prev,
+        [viewKey]: { file, preview: URL.createObjectURL(file) },
+      };
+    });
 
-    setSelectedFiles((prev) => [...prev, ...withPreviews]);
-    // Reset input so same file can be re-added if removed
+    // Reset input so the same file can be re-selected after removal
     e.target.value = "";
   };
 
-  const handleRemove = (id) => {
-    setSelectedFiles((prev) => {
-      const removed = prev.find((f) => f.id === id);
-      if (removed) URL.revokeObjectURL(removed.preview);
-      return prev.filter((f) => f.id !== id);
+  const handleRemove = (viewKey) => {
+    setSlots((prev) => {
+      if (prev[viewKey]) URL.revokeObjectURL(prev[viewKey].preview);
+      return { ...prev, [viewKey]: null };
     });
   };
 
+  const requiredFilled = VIEWS
+    .filter((v) => v.required)
+    .every((v) => slots[v.key] !== null);
+
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      setError("Please select at least one image.");
+    if (!requiredFilled) {
+      setError("Please provide images for all required views: Front, Back, Left, Right.");
       return;
     }
 
@@ -47,14 +65,14 @@ function ImageUpload() {
     try {
       const formData = new FormData();
       formData.append("user_id", user.id);
-      selectedFiles.forEach((item) => formData.append("images", item.file));
+
+      VIEWS.forEach(({ key }) => {
+        if (slots[key]) formData.append(key, slots[key].file);
+      });
 
       const response = await fetch(
         `http://127.0.0.1:5000/api/claims/${claimId}/images`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        { method: "POST", body: formData }
       );
 
       const data = await response.json();
@@ -64,15 +82,12 @@ function ImageUpload() {
         return;
       }
 
-      setSuccess(`${data.images.length} image(s) uploaded and analyzed successfully!`);
-      setSelectedFiles([]);
+      setSuccess(`${data.images.length} vehicle view image(s) uploaded and analyzed successfully!`);
+      setSlots(EMPTY_SLOTS);
 
-      // Navigate to damage results after a short delay so user sees the message
-      setTimeout(() => {
-        navigate(`/claim/results/${claimId}`);
-      }, 1500);
+      setTimeout(() => navigate(`/claim/results/${claimId}`), 1500);
 
-    } catch (err) {
+    } catch {
       setError("Unable to connect to server. Make sure Flask is running.");
     } finally {
       setLoading(false);
@@ -85,64 +100,73 @@ function ImageUpload() {
       <header className="dashboard-header">
         <div>
           <h1>ClaimSightAI</h1>
-          <p>Claim #{claimId} — Upload Accident Images</p>
+          <p>Claim #{claimId} — Upload Vehicle Images</p>
         </div>
-        <button
-          className="logout-button"
-          onClick={() => navigate("/dashboard")}
-        >
+        <button className="logout-button" onClick={() => navigate("/dashboard")}>
           Back to Dashboard
         </button>
       </header>
 
       <main className="form-main">
 
-        <h2>Upload Vehicle Accident Images</h2>
-        <p>Select clear photos of the vehicle damage. Accepted: JPG, JPEG, PNG.</p>
+        <h2>Upload Vehicle Images by View</h2>
+        <p>
+          Provide a clear photo for each vehicle view.
+          Front, Back, Left, and Right are required. Top is optional.
+          Accepted formats: JPG, JPEG, PNG (max 10 MB each).
+        </p>
 
-        {error && <p className="error-message">{error}</p>}
+        {error   && <p className="error-message">{error}</p>}
         {success && <p className="success-message">{success}</p>}
 
-        <div className="form-group">
-          <label>Select Images</label>
-          <input
-            type="file"
-            accept=".jpg,.jpeg,.png"
-            multiple
-            onChange={handleFileChange}
-          />
-        </div>
+        <div className="view-upload-grid">
+          {VIEWS.map(({ key, label, required }) => (
+            <div key={key} className="view-upload-slot">
 
-        {selectedFiles.length > 0 && (
-          <div className="image-preview-section">
-            <p>{selectedFiles.length} image(s) selected</p>
+              <div className="view-upload-slot-header">
+                <span className="view-upload-label">{label}</span>
+                {required
+                  ? <span className="view-required-badge">Required</span>
+                  : <span className="view-optional-badge">Optional</span>
+                }
+              </div>
 
-            <div className="image-preview-grid">
-              {selectedFiles.map((item) => (
-                <div key={item.id} className="image-preview-card">
-                  <img
-                    src={item.preview}
-                    alt={item.file.name}
-                  />
-                  <p>{item.file.name}</p>
+              {slots[key] ? (
+                <div className="view-preview-card">
+                  <img src={slots[key].preview} alt={label} />
+                  <p className="view-preview-filename">{slots[key].file.name}</p>
                   <button
                     type="button"
-                    onClick={() => handleRemove(item.id)}
+                    className="view-remove-button"
+                    onClick={() => handleRemove(key)}
                   >
                     Remove
                   </button>
                 </div>
-              ))}
+              ) : (
+                <label className="view-upload-area">
+                  <span className="view-upload-icon">+</span>
+                  <span>Click to select image</span>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    style={{ display: "none" }}
+                    onChange={(e) => handleFileChange(key, e)}
+                  />
+                </label>
+              )}
+
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         <button
           className="login-button"
+          style={{ marginTop: "24px" }}
           onClick={handleUpload}
-          disabled={loading || selectedFiles.length === 0}
+          disabled={loading || !requiredFilled}
         >
-          {loading ? "Uploading..." : "Upload Images"}
+          {loading ? "Uploading & Analyzing..." : "Upload & Analyze"}
         </button>
 
       </main>
