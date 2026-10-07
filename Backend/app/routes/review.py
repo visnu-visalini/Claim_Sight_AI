@@ -51,6 +51,7 @@ def _assemble_claim_data(claim, images, cost):
             "damage_type": img.damage_type,
             "confidence": img.confidence,
             "bounding_box": img.bounding_box,
+            "vehicle_view": img.vehicle_view,
             "image_url": (
                 f"http://127.0.0.1:5000/api/claims/{claim.id}"
                 f"/images/{img.id}/file"

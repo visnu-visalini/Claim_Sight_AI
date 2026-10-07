@@ -66,6 +66,16 @@ def create_app():
         except Exception:
             pass  # Column already exists — safe to ignore
 
+        # Safe migration: add vehicle_view column to claim_images
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(
+                    db.text("ALTER TABLE claim_images ADD COLUMN vehicle_view VARCHAR(20)")
+                )
+                conn.commit()
+        except Exception:
+            pass  # Column already exists — safe to ignore
+
         # Safe migrations: add OpenAI second-opinion columns to claim_images
         _openai_migrations = [
             "ALTER TABLE claim_images ADD COLUMN openai_available BOOLEAN DEFAULT 0",

@@ -19,6 +19,10 @@ class ClaimImage(db.Model):
 
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Vehicle view — nullable for backward compatibility with existing rows
+    # Valid values: front | back | left | right | top | None (legacy/unspecified)
+    vehicle_view = db.Column(db.String(20), nullable=True)
+
     # OpenAI Vision second-opinion results (all nullable — existing rows unaffected)
     openai_available        = db.Column(db.Boolean,     nullable=True, default=False)
     openai_damage_present   = db.Column(db.Boolean,     nullable=True)

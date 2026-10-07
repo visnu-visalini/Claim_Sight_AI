@@ -135,6 +135,7 @@ def _info_table(rows, styles):
 def _damage_table(images, styles):
     """One row per damaged image."""
     header = [
+        Paragraph("View", styles["small"]),
         Paragraph("Image", styles["small"]),
         Paragraph("Damage Type", styles["small"]),
         Paragraph("Confidence", styles["small"]),
@@ -142,17 +143,19 @@ def _damage_table(images, styles):
     ]
     rows = [header]
     for img in images:
-        conf = f"{round(img.confidence * 100)}%" if img.confidence is not None else "—"
+        conf     = f"{round(img.confidence * 100)}%" if img.confidence is not None else "—"
         detected = "Yes" if img.damage_detected else "No"
+        view     = (img.vehicle_view or "—").capitalize()
         rows.append([
+            Paragraph(view, styles["body"]),
             Paragraph(img.filename or "—", styles["small"]),
             Paragraph(_val(img.damage_type).capitalize(), styles["body"]),
             Paragraph(conf, styles["body"]),
             Paragraph(detected, styles["body"]),
         ])
 
-    col_w = (PAGE_W - 2 * MARGIN) / 4
-    t = Table(rows, colWidths=[col_w] * 4)
+    col_w = (PAGE_W - 2 * MARGIN) / 5
+    t = Table(rows, colWidths=[col_w] * 5)
     t.setStyle(TableStyle([
         ("BACKGROUND",  (0, 0), (-1, 0), LIGHT),
         ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
