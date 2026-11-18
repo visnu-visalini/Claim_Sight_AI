@@ -1,4 +1,12 @@
+from app import db, standard_response
+from app.validation import ClaimCreateSchema, ClaimUpdateSchema
+from app.decorators import require_user
+from marshmallow import ValidationError
 from flask import Blueprint, request, jsonify
+
+from app.validation import ClaimCreateSchema, ClaimUpdateSchema
+from app.decorators import require_user
+from marshmallow import ValidationError
 
 from app import db
 from app.models.claim import Claim
@@ -10,50 +18,27 @@ from app.cost_estimation import estimate_claim
 claims_bp = Blueprint("claims", __name__)
 
 
-@claims_bp.route("/", methods=["POST"])
+@claims_bp.route("/", methods=["POST"]) 
+@require_user
 def create_claim():
+    try:
+        data = request.get_json()
+        validated = ClaimCreateSchema().load(data)
+    except ValidationError as err:
+        return standard_response(False, "Invalid input", err.messages, 400)
 
-    data = request.get_json()
-
-    if not data:
-        return jsonify({
-            "success": False,
-            "message": "Request data is required"
-        }), 400
-
-    user_id = data.get("user_id")
-
-    if not user_id:
-        return jsonify({
-            "success": False,
-            "message": "User ID is required"
-        }), 400
-
-    user = User.query.get(user_id)
-
-    if not user:
-        return jsonify({
-            "success": False,
-            "message": "User not found"
-        }), 404
-
-    claim = Claim(
-        user_id=user_id,
-        status="draft"
-    )
-
+    user_id = validated["user_id"]
+    claim = Claim(user_id=user_id, status="draft")
     db.session.add(claim)
     db.session.commit()
 
-    return jsonify({
-        "success": True,
-        "message": "Claim created successfully",
-        "claim": {
-            "id": claim.id,
-            "user_id": claim.user_id,
-            "status": claim.status
-        }
-    }), 201
+    return standard_response(True, "Claim created successfully", {
+        "id": claim.id,
+        "user_id": claim.user_id,
+        "status": claim.status,
+    }, 201)
+
+
 
 
 @claims_bp.route("/<int:claim_id>", methods=["GET"])
@@ -120,7 +105,12 @@ def update_claim(claim_id):
             "message": "Request data is required"
         }), 400
 
-    user_id = data.get("user_id")
+    # Accept user ID from JSON body, query param, or X-User-ID header
+    user_id = (
+        data.get("user_id")
+        or request.args.get("user_id", type=int)
+        or request.headers.get("X-User-ID")
+    )
 
     if not user_id:
         return jsonify({

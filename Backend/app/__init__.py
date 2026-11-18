@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
@@ -7,6 +7,13 @@ import os
 load_dotenv()  # loads Backend/.env into os.environ before anything else
 
 db = SQLAlchemy()
+
+def standard_response(success: bool, message: str, data=None, status=200):
+    payload = {"success": success, "message": message}
+    if data is not None:
+        payload["data"] = data
+    return jsonify(payload), status
+
 
 
 def create_app():
@@ -42,6 +49,9 @@ def create_app():
     app.register_blueprint(profile_bp, url_prefix="/api/profile")
     app.register_blueprint(admin_bp,   url_prefix="/api/admin")
     app.register_blueprint(report_bp,  url_prefix="/api/claims")
+    # Onboarding routes (vehicle & insurance)
+    from app.routes.onboarding import onboarding_bp
+    app.register_blueprint(onboarding_bp, url_prefix="/api/onboarding")
 
     with app.app_context():
         db.create_all()
@@ -56,7 +66,14 @@ def create_app():
         except Exception:
             pass  # Column already exists — safe to ignore
 
-        # Safe migration: add role column to users if it does not exist yet
+        # Safe migration: add onboarding_completed column to users (boolean, default false)
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0"))
+                conn.commit()
+        except Exception:
+            pass
+
         try:
             with db.engine.connect() as conn:
                 conn.execute(
@@ -94,5 +111,12 @@ def create_app():
                     conn.commit()
             except Exception:
                 pass  # Column already exists — safe to ignore
+
+
+
+    # Logging configuration
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    app.logger = logging.getLogger(__name__)
 
     return app

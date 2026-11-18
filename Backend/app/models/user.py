@@ -24,3 +24,4 @@ class User(db.Model):
         nullable=False,
         default="user"
     )
+
