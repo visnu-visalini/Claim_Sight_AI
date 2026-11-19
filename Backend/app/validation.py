@@ -15,6 +15,16 @@ class InsuranceSchema(Schema):
     policy_number = fields.Str(required=True)
     expiry_date = fields.Date(required=True)
 
+class ClaimCreateSchema(Schema):
+    # Fields required for creating a new claim
+    user_id = fields.Int(required=True)
+    description = fields.Str(required=True)
+    vehicle_id = fields.Int(required=True)
+    accident_date = fields.Date(required=True)
+    accident_location = fields.Str(required=True)
+    accident_description = fields.Str(required=False)
+
+
 class ClaimUpdateSchema(Schema):
     user_id = fields.Int(required=True)
     description = fields.Str(required=False)

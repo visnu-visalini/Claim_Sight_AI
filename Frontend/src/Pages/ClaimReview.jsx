@@ -26,7 +26,7 @@ function ClaimReview() {
     setDownloadError("");
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/claims/${claimId}/report?user_id=${user.id}`
+        `/api/claims/${claimId}/report?user_id=${user.id}`
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -53,7 +53,7 @@ function ClaimReview() {
     const fetchReview = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:5000/api/claims/${claimId}/review?user_id=${user.id}`
+          `/api/claims/${claimId}/review?user_id=${user.id}`
         );
 
         const data = await response.json();
@@ -88,7 +88,7 @@ function ClaimReview() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:5000/api/claims/${claimId}/submit`,
+        `/api/claims/${claimId}/submit`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

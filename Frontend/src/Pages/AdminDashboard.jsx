@@ -56,8 +56,8 @@ function AdminDashboard() {
     const fetchAll = async () => {
       try {
         const [statsRes, claimsRes] = await Promise.all([
-          fetch(`http://127.0.0.1:5000/api/admin/stats?user_id=${admin.id}`),
-          fetch(`http://127.0.0.1:5000/api/admin/claims?user_id=${admin.id}`),
+          fetch(`/api/admin/stats?user_id=${admin.id}`),
+          fetch(`/api/admin/claims?user_id=${admin.id}`),
         ]);
 
         const statsData  = await statsRes.json();
@@ -101,7 +101,7 @@ function AdminDashboard() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/admin/claims/${claimId}/status`,
+        `/api/admin/claims/${claimId}/status`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +153,7 @@ function AdminDashboard() {
     setDownloadErr((p) => ({ ...p, [claimId]: "" }));
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/claims/${claimId}/report?user_id=${admin.id}`
+        `/api/claims/${claimId}/report?user_id=${admin.id}`
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

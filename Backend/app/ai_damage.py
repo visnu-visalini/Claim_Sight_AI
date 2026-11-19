@@ -1,7 +1,11 @@
 from ultralytics import YOLO
+import os
 
-
-MODEL_PATH = "ai_models/cardd/v2.0/best.pt"
+# Always resolve the model path relative to this file's location,
+# so the backend works regardless of the working directory.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(_HERE, "..", "ai_models", "cardd", "v2.0", "best.pt")
+MODEL_PATH = os.path.normpath(MODEL_PATH)
 
 model = YOLO(MODEL_PATH)
 

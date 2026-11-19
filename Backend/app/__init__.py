@@ -20,7 +20,7 @@ def create_app():
 
     app = Flask(__name__)
 
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///claimsight.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

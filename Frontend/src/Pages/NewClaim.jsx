@@ -38,7 +38,7 @@ function NewClaim() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:5000/api/claims/${currentClaim.id}`,
+        `/api/claims/${currentClaim.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
